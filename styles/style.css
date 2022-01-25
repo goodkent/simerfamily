@@ -67,6 +67,15 @@ body {
     content: "/";
 }
 
+.menubar a {
+    text-decoration:none;
+    color: #999999;
+    font-weight:bolder;
+}
+
+.menubar a:hover {
+    color: white;
+}
 .content {
     display:flex;
     flex: 1;
@@ -89,3 +98,27 @@ body {
     color:#14c4a5;
     text-decoration: none;
 }
+
+.box {
+
+    background: white;
+    height: 80px;
+    position: relative;
+  }
+  
+  .line {
+    height: 39px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .triangle {
+    background: white;
+    border: 1px solid #eee;
+    border-width: 2px 2px 0 0;
+    transform: rotate(135deg);
+    position: relative;
+    left: 100px;
+    top: 28px;
+    width: 20px;
+    height: 20px;
+  }
