@@ -1,9 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100;700&display=swap');
 * {
-    font-family: Roboto, sans-serif;
+    font-family: 'Roboto Skab', sans-serif;
     font-size:18px;
-    font-weight:normal;
+    font-weight:300;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -22,9 +23,14 @@ body {
 }
 .banner {
     display:flex;
-    background-image: url("../images/banner.png");
+    background: url("../images/banner.png");
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
     background-repeat:no-repeat;
-    background-size: 100%;
+    background-position: center;
+
     justify-content: center;
     align-items: center;
     height:221px;
@@ -42,12 +48,10 @@ body {
 
 .menubar {
     display:flex;
-    flex-direction: row;
     justify-content: space-between;
     color:white;
     align-items: center;
-    padding: 20px 20px 20px 20px;
-    
+    padding: 20px 20px 20px 150px;    
 }
 
 .menubar ul {
@@ -59,7 +63,7 @@ body {
     height:20px;
     color:#999999;
     list-style-type: none;
-
+    
 }
 
 .menubar li+li::before {
@@ -70,7 +74,7 @@ body {
 .menubar a {
     text-decoration:none;
     color: #999999;
-    font-weight:bolder;
+    font-weight:600;
 }
 
 .menubar a:hover {
@@ -79,13 +83,30 @@ body {
 .content {
     display:flex;
     flex: 1;
+
     flex-direction: column;
-    margin:50px;
-    padding:100px;
+    margin:40px 150px 40px 150px;
+    padding:0px;
     background-color:white;
     box-shadow: 2px 2px 6px #262626;
+    color:#2B3542;
 }
 
+.content-head {
+    padding:0px;
+}
+.content-head h1 {
+    padding:0px 100px 0px 100px;
+    margin: 20px 0px 10px 0px;
+    font-size:2.2em;
+    font-family: 'Roboto Slab', sans-serif;
+    font-weight:700;
+    
+}
+
+.content-main {
+    padding:20px 100px 0px 100px;
+}
 .footer {
     display:flex;
     padding:20px;
@@ -102,23 +123,23 @@ body {
 .box {
 
     background: white;
-    height: 80px;
+    height: 60px;
     position: relative;
   }
   
   .line {
-    height: 39px;
+    height: 5px;
     border-bottom: 1px solid #eee;
   }
   
   .triangle {
     background: white;
     border: 1px solid #eee;
-    border-width: 2px 2px 0 0;
+    border-width: 1px 1px 0 0;
     transform: rotate(135deg);
     position: relative;
     left: 100px;
-    top: 28px;
+    top: -5px;
     width: 20px;
     height: 20px;
   }
