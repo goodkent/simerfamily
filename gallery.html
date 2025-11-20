@@ -53,6 +53,69 @@
       cursor: default;
       font-weight: bold;
     }
+
+    .modal {
+    position: fixed;
+    inset: 0;
+    display: none;              /* hidden by default */
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  .modal.open {
+    display: flex;
+  }
+
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .modal-content {
+    position: relative;
+    max-width: 95vw;
+    max-height: 85vh;
+    z-index: 1;
+    background: #000;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .modal-content img {
+    max-width: 100%;
+    max-height: 70vh;
+    display: block;
+  }
+
+  #modal-caption {
+    margin-top: 0.5rem;
+    color: #fff;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    font-size: 2rem;
+    line-height: 1;
+    border: none;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    z-index: 2;
+  }
+
+  .modal-close:active {
+    transform: scale(0.95);
+  }
   </style>
 </head>
  <body>
@@ -93,146 +156,238 @@
       </div>
       </div>
       <div class="footer">&copy;2022-2025</div>
+      <div id="image-modal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Close image">&times;</button>
+        <img id="modal-image" src="" alt="">
+        <div id="modal-caption"></div>
+      </div>
+    </div>
   </body>
 
- 
+ <script>
+  // ==== CONFIG ====
+  const GITHUB_OWNER = "goodkent";
+  const GITHUB_REPO  = "simerfamily";
+  const IMAGES_PATH  = "images";
+  const CSV_PATH     = "images/index.csv";
+  const BRANCH       = "main";     // change if needed
+  const PER_PAGE     = 20;
+  // =================
 
+  function getAlbumFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("album");
+  }
 
+  // --- Modal helpers ---
+  function openModal(src, caption) {
+    const modal = document.getElementById("image-modal");
+    const img = document.getElementById("modal-image");
+    const cap = document.getElementById("modal-caption");
 
-  <script>
-    // ==== CONFIG ====
-    const GITHUB_OWNER = "goodkent";
-    const GITHUB_REPO  = "simerfamily";
-    const IMAGES_PATH  = "gallery";
-    const PER_PAGE     = 20;
-    // =================
+    img.src = src;
+    img.alt = caption || "";
+    cap.textContent = caption || "";
 
-    function getAlbumFromQuery() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("album");
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeModal() {
+    const modal = document.getElementById("image-modal");
+    const img = document.getElementById("modal-image");
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    img.src = "";
+    img.alt = "";
+  }
+
+  function setupModalListeners() {
+    const modal = document.getElementById("image-modal");
+    const backdrop = modal.querySelector(".modal-backdrop");
+    const closeBtn = modal.querySelector(".modal-close");
+
+    backdrop.addEventListener("click", closeModal);
+    closeBtn.addEventListener("click", closeModal);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    });
+  }
+
+  // Load and parse index.csv into { [filename]: caption }
+  async function loadCaptionsFromCsv() {
+    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${BRANCH}/${CSV_PATH}`;
+
+    const res = await fetch(rawUrl);
+    if (!res.ok) {
+      console.warn("No index.csv found or failed to load:", res.status, res.statusText);
+      return {};
     }
 
-    async function fetchAlbumImages(albumName) {
-      const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${IMAGES_PATH}`;
+    const text = await res.text();
+    const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
 
-      try {
-        const res = await fetch(apiUrl);
-        if (!res.ok) {
-          document.getElementById("gallery").textContent =
-            "Sorry, the gallery could not be loaded.";
-          return;
-        }
+    const map = {};
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      const firstComma = line.indexOf(",");
+      if (firstComma === -1) continue;
 
-        const data = await res.json();
+      const filename = line.slice(0, firstComma).trim();
+      let caption = line.slice(firstComma + 1).trim();
 
-        const prefix = albumName + "_";
-        const images = data.filter(item =>
-          item.type === "file" &&
-          item.name.startsWith(prefix) &&
-          /\.(jpe?g|png|gif|webp|avif|bmp)$/i.test(item.name)
-        );
+      if (caption.startsWith('"') && caption.endsWith('"')) {
+        caption = caption.slice(1, -1);
+      }
 
-        // sort by number after underscore if you like
-        images.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+      if (filename) {
+        map[filename] = caption;
+      }
+    }
 
-        initGallery(images, albumName);
-      } catch (err) {
-        console.error(err);
+    return map;
+  }
+
+  async function fetchAlbumImages(albumName, captions) {
+    const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${IMAGES_PATH}`;
+
+    try {
+      const res = await fetch(apiUrl);
+      if (!res.ok) {
         document.getElementById("gallery").textContent =
           "Sorry, the gallery could not be loaded.";
-      }
-    }
-
-    function initGallery(images, albumName) {
-      const albumTitleEl = document.getElementById("album-title");
-      albumTitleEl.textContent = `Album: ${albumName}`;
-
-      if (images.length === 0) {
-        document.getElementById("gallery").textContent =
-          "No photos found for this album.";
         return;
       }
 
-      const totalPages = Math.ceil(images.length / PER_PAGE);
-      let currentPage = 1;
+      const data = await res.json();
 
-      function renderPage(page) {
-        currentPage = page;
-        const galleryEl = document.getElementById("gallery");
-        galleryEl.innerHTML = "";
+      const prefix = albumName + "_";
+      const images = data.filter(item =>
+        item.type === "file" &&
+        item.name.startsWith(prefix) &&
+        /\.(jpe?g|png|gif|webp|avif|bmp)$/i.test(item.name)
+      );
 
-        const start = (page - 1) * PER_PAGE;
-        const end = start + PER_PAGE;
-        const pageItems = images.slice(start, end);
+      images.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true })
+      );
 
-        pageItems.forEach(img => {
-          const wrapper = document.createElement("div");
-          wrapper.className = "thumb";
+      initGallery(images, albumName, captions);
+    } catch (err) {
+      console.error(err);
+      document.getElementById("gallery").textContent =
+        "Sorry, the gallery could not be loaded.";
+    }
+  }
 
-          const link = document.createElement("a");
-          link.href = img.download_url;
-          link.target = "_blank";
+  function initGallery(images, albumName, captions) {
+    const albumTitleEl = document.getElementById("album-title");
+    albumTitleEl.textContent = `Album: ${albumName}`;
 
-          const imageEl = document.createElement("img");
-          imageEl.src = img.download_url;
-          imageEl.alt = img.name;
-          imageEl.loading = "lazy";
+    if (images.length === 0) {
+      document.getElementById("gallery").textContent =
+        "No photos found for this album.";
+      return;
+    }
 
-          const caption = document.createElement("span");
-          caption.textContent = img.name;
+    const totalPages = Math.ceil(images.length / PER_PAGE);
+    let currentPage = 1;
 
-          link.appendChild(imageEl);
-          wrapper.appendChild(link);
-          wrapper.appendChild(caption);
+    function renderPage(page) {
+      currentPage = page;
+      const galleryEl = document.getElementById("gallery");
+      galleryEl.innerHTML = "";
 
-          galleryEl.appendChild(wrapper);
+      const start = (page - 1) * PER_PAGE;
+      const end = start + PER_PAGE;
+      const pageItems = images.slice(start, end);
+
+      pageItems.forEach(img => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "thumb";
+
+        const filename = img.name;
+        const captionText = captions[filename] || filename;
+
+        const imageEl = document.createElement("img");
+        imageEl.src = img.download_url;
+        imageEl.alt = captionText;
+        imageEl.loading = "lazy";
+        imageEl.title = captionText;
+
+        // Click opens modal instead of new window
+        imageEl.addEventListener("click", () => {
+          openModal(img.download_url, captionText);
         });
 
-        renderPagination();
-      }
+        const captionSpan = document.createElement("span");
+        captionSpan.textContent = captionText;
 
-      function renderPagination() {
-        const paginationEl = document.getElementById("pagination");
-        paginationEl.innerHTML = "";
-        if (totalPages <= 1) return;
+        wrapper.appendChild(imageEl);
+        wrapper.appendChild(captionSpan);
+        galleryEl.appendChild(wrapper);
+      });
 
-        const makeButton = (label, page, disabled = false) => {
-          const btn = document.createElement("button");
-          btn.textContent = label;
-          if (disabled) {
-            btn.disabled = true;
-          } else {
-            btn.addEventListener("click", () => renderPage(page));
-          }
-          return btn;
-        };
-
-        paginationEl.appendChild(
-          makeButton("« Prev", Math.max(1, currentPage - 1), currentPage === 1)
-        );
-
-        for (let i = 1; i <= totalPages; i++) {
-          const btn = makeButton(String(i), i, i === currentPage);
-          paginationEl.appendChild(btn);
-        }
-
-        paginationEl.appendChild(
-          makeButton("Next »", Math.min(totalPages, currentPage + 1), currentPage === totalPages)
-        );
-      }
-
-      renderPage(1);
+      renderPagination();
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const album = getAlbumFromQuery();
-      if (!album) {
-        document.getElementById("gallery").textContent =
-          "No album selected. Go back to the Albums page.";
-        return;
+    function renderPagination() {
+      const paginationEl = document.getElementById("pagination");
+      paginationEl.innerHTML = "";
+      if (totalPages <= 1) return;
+
+      const makeButton = (label, page, disabled = false) => {
+        const btn = document.createElement("button");
+        btn.textContent = label;
+        if (disabled) {
+          btn.disabled = true;
+        } else {
+          btn.addEventListener("click", () => renderPage(page));
+        }
+        return btn;
+      };
+
+      paginationEl.appendChild(
+        makeButton("« Prev", Math.max(1, currentPage - 1), currentPage === 1)
+      );
+
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = makeButton(String(i), i, i === currentPage);
+        paginationEl.appendChild(btn);
       }
-      fetchAlbumImages(album);
-    });
-  </script>
-</body>
+
+      paginationEl.appendChild(
+        makeButton("Next »", Math.min(totalPages, currentPage + 1), currentPage === totalPages)
+      );
+    }
+
+    renderPage(1);
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    setupModalListeners();
+
+    const album = getAlbumFromQuery();
+    if (!album) {
+      document.getElementById("gallery").textContent =
+        "No album selected. Go back to the Albums page.";
+      return;
+    }
+
+    let captions = {};
+    try {
+      captions = await loadCaptionsFromCsv();
+    } catch (e) {
+      console.warn("Falling back to no captions:", e);
+    }
+
+    fetchAlbumImages(album, captions);
+  });
+</script>
+
 </html>
