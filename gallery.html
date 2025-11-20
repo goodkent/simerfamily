@@ -70,7 +70,7 @@
   .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.9);
   }
 
   .modal-content {
@@ -151,7 +151,7 @@
           <p><a href="albums.html">← Back to Albums</a></p>
 
           <div id="gallery">Loading photos…</div>
-          <div id="pagination"></div>
+          <div id="pagination"></div><br>
         </main>
       </div>
       </div>
@@ -249,7 +249,7 @@
         map[filename] = caption;
       }
     }
-
+    console.log("Loaded captions:", map);
     return map;
   }
 
