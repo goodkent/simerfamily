@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Album Gallery</title>
+  <link rel="stylesheet" href="styles/style.css">
+
+  <style>
+    #gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .thumb {
+      border: 1px solid #ccc;
+      padding: 4px;
+      background: #fafafa;
+    }
+
+    .thumb img {
+      display: block;
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+    }
+
+    .thumb span {
+      display: block;
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    #pagination {
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+
+    #pagination button {
+      margin: 0 0.25rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 3px;
+      border: 1px solid #999;
+      background: #eee;
+      cursor: pointer;
+    }
+
+    #pagination button[disabled] {
+      background: #ccc;
+      cursor: default;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- reuse your own header / nav here -->
+  <header>
+    <h1>Simer Family</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="albums.html">Albums</a></li>
+        <li><a href="#" class="active">Album Gallery</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="page">
+    <h2 id="album-title">Album</h2>
+    <p><a href="albums.html">← Back to Albums</a></p>
+
+    <div id="gallery">Loading photos…</div>
+    <div id="pagination"></div>
+  </main>
+
+  <script>
+    // ==== CONFIG ====
+    const GITHUB_OWNER = "goodkent";
+    const GITHUB_REPO  = "simerfamily";
+    const IMAGES_PATH  = "gallery";
+    const PER_PAGE     = 20;
+    // =================
+
+    function getAlbumFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("album");
+    }
+
+    async function fetchAlbumImages(albumName) {
+      const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${IMAGES_PATH}`;
+
+      try {
+        const res = await fetch(apiUrl);
+        if (!res.ok) {
+          document.getElementById("gallery").textContent =
+            "Sorry, the gallery could not be loaded.";
+          return;
+        }
+
+        const data = await res.json();
+
+        const prefix = albumName + "_";
+        const images = data.filter(item =>
+          item.type === "file" &&
+          item.name.startsWith(prefix) &&
+          /\.(jpe?g|png|gif|webp|avif|bmp)$/i.test(item.name)
+        );
+
+        // sort by number after underscore if you like
+        images.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+        initGallery(images, albumName);
+      } catch (err) {
+        console.error(err);
+        document.getElementById("gallery").textContent =
+          "Sorry, the gallery could not be loaded.";
+      }
+    }
+
+    function initGallery(images, albumName) {
+      const albumTitleEl = document.getElementById("album-title");
+      albumTitleEl.textContent = `Album: ${albumName}`;
+
+      if (images.length === 0) {
+        document.getElementById("gallery").textContent =
+          "No photos found for this album.";
+        return;
+      }
+
+      const totalPages = Math.ceil(images.length / PER_PAGE);
+      let currentPage = 1;
+
+      function renderPage(page) {
+        currentPage = page;
+        const galleryEl = document.getElementById("gallery");
+        galleryEl.innerHTML = "";
+
+        const start = (page - 1) * PER_PAGE;
+        const end = start + PER_PAGE;
+        const pageItems = images.slice(start, end);
+
+        pageItems.forEach(img => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "thumb";
+
+          const link = document.createElement("a");
+          link.href = img.download_url;
+          link.target = "_blank";
+
+          const imageEl = document.createElement("img");
+          imageEl.src = img.download_url;
+          imageEl.alt = img.name;
+          imageEl.loading = "lazy";
+
+          const caption = document.createElement("span");
+          caption.textContent = img.name;
+
+          link.appendChild(imageEl);
+          wrapper.appendChild(link);
+          wrapper.appendChild(caption);
+
+          galleryEl.appendChild(wrapper);
+        });
+
+        renderPagination();
+      }
+
+      function renderPagination() {
+        const paginationEl = document.getElementById("pagination");
+        paginationEl.innerHTML = "";
+        if (totalPages <= 1) return;
+
+        const makeButton = (label, page, disabled = false) => {
+          const btn = document.createElement("button");
+          btn.textContent = label;
+          if (disabled) {
+            btn.disabled = true;
+          } else {
+            btn.addEventListener("click", () => renderPage(page));
+          }
+          return btn;
+        };
+
+        paginationEl.appendChild(
+          makeButton("« Prev", Math.max(1, currentPage - 1), currentPage === 1)
+        );
+
+        for (let i = 1; i <= totalPages; i++) {
+          const btn = makeButton(String(i), i, i === currentPage);
+          paginationEl.appendChild(btn);
+        }
+
+        paginationEl.appendChild(
+          makeButton("Next »", Math.min(totalPages, currentPage + 1), currentPage === totalPages)
+        );
+      }
+
+      renderPage(1);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const album = getAlbumFromQuery();
+      if (!album) {
+        document.getElementById("gallery").textContent =
+          "No album selected. Go back to the Albums page.";
+        return;
+      }
+      fetchAlbumImages(album);
+    });
+  </script>
+</body>
+</html>

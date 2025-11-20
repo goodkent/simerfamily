@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simer Family Albums</title>
+  <link rel="stylesheet" href="styles/style.css">
+
+  <style>
+    /* Album list layout */
+    #albums {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .album-card {
+      border: 1px solid #ccc;
+      padding: 8px;
+      background: #fafafa;
+      text-align: center;
+    }
+
+    .album-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .album-title {
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    .album-count {
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    .album-card a {
+      text-decoration: none;
+      color: inherit;
+    }
+  </style>
+</head>
+<body>
+  <!-- reuse your own header / nav here -->
+  <header>
+    <h1>Simer Family</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <!-- add Albums link in your real nav -->
+        <li><a href="albums.html" class="active">Albums</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="page">
+    <h2>Photo Albums</h2>
+    <p>Browse photo albums from the Simer family collection.</p>
+
+    <div id="albums">Loading albums…</div>
+  </main>
+
+  <!-- reuse your footer here if you have one -->
+
+  <script>
+    // ==== CONFIG ====
+    const GITHUB_OWNER = "goodkent";
+    const GITHUB_REPO  = "simerfamily";
+    const IMAGES_PATH  = "gallery";  // folder with all your albumname_#### files
+    // =================
+
+    async function fetchAlbumData() {
+      const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${IMAGES_PATH}`;
+
+      try {
+        const res = await fetch(apiUrl);
+        if (!res.ok) {
+          document.getElementById("albums").textContent =
+            "Sorry, albums could not be loaded.";
+          return;
+        }
+
+        const data = await res.json();
+
+        // filter to image files
+        const images = data.filter(item =>
+          item.type === "file" &&
+          /\.(jpe?g|png|gif|webp|avif|bmp)$/i.test(item.name)
+        );
+
+        buildAlbumList(images);
+      } catch (err) {
+        console.error(err);
+        document.getElementById("albums").textContent =
+          "Sorry, albums could not be loaded.";
+      }
+    }
+
+    function buildAlbumList(images) {
+      // album name is everything before the first underscore: albumname_0001.jpg
+      const albumMap = new Map();
+
+      images.forEach(img => {
+        const match = img.name.match(/^([^_]+)_\d+/);
+        if (!match) return;
+
+        const albumName = match[1];
+        if (!albumMap.has(albumName)) {
+          albumMap.set(albumName, []);
+        }
+        albumMap.get(albumName).push(img);
+      });
+
+      const container = document.getElementById("albums");
+      container.innerHTML = "";
+
+      if (albumMap.size === 0) {
+        container.textContent = "No albums found.";
+        return;
+      }
+
+      // sort albums alphabetically
+      const sortedAlbums = Array.from(albumMap.entries()).sort(
+        ([aName], [bName]) => aName.localeCompare(bName, undefined, { numeric: true })
+      );
+
+      sortedAlbums.forEach(([albumName, imgs]) => {
+        // pick first image as cover
+        const cover = imgs[0];
+
+        const card = document.createElement("div");
+        card.className = "album-card";
+
+        const link = document.createElement("a");
+        link.href = `gallery.html?album=${encodeURIComponent(albumName)}`;
+
+        const imgEl = document.createElement("img");
+        imgEl.src = cover.download_url;
+        imgEl.alt = albumName;
+        imgEl.loading = "lazy";
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "album-title";
+        titleEl.textContent = albumName;
+
+        const countEl = document.createElement("div");
+        countEl.className = "album-count";
+        countEl.textContent = `${imgs.length} photo${imgs.length === 1 ? "" : "s"}`;
+
+        link.appendChild(imgEl);
+        link.appendChild(titleEl);
+        link.appendChild(countEl);
+
+        card.appendChild(link);
+        container.appendChild(card);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", fetchAlbumData);
+  </script>
+</body>
+</html>
