@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Contribute | Simer Family</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles/style.css">
+    <style>
+    /* Minimal page-local styling (safe to remove if you want it all in site.css) */
+    .page { max-width: 980px; margin: 0 auto; padding: 0px 0px; }
+    .card { background: rgba(255,255,255,.95); border: 0px solid rgba(0,0,0,.12); border-radius: 14px; padding: 18px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 720px){ .grid { grid-template-columns: 1fr; } }
+    label { font-weight: 700; display:block; margin-bottom: 6px; }
+    input, textarea {
+      width: 100%;
+      border: 1px solid rgba(0,0,0,.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #fff;
+    }
+    textarea { min-height: 160px; resize: vertical; }
+    .help { opacity: .8; font-size: .9rem; margin-top: 6px; }
+    .row { margin-bottom: 12px; }
+    .actions { display:flex; gap:10px; align-items:center; }
+    button {
+      border: 1px solid rgba(0,0,0,.18);
+      background: #111;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .status { margin-top: 10px; font-size: .95rem; }
+    .status.ok { color: #0a7a2f; }
+    .status.err { color: #b42318; }
+    .fineprint { opacity: .75; font-size: .85rem; margin-top: 10px; line-height: 1.3; }
+
+    /* Honeypot (spam trap) should be hidden from humans */
+    .hp-field { position:absolute; left:-5000px; width:1px; height:1px; overflow:hidden; }
+  </style>
+  </head>
+  <body>
+      <div class="header">
+        <div class="banner">Simer Genealogy</div>
+        <div class="menubar">
+            <div class="left">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="">Simer Family</a></li>
+                    <li><a href="">Family Tree</a></li>
+                    <li><a href="contribute.html">Contribute</a></li>
+                    <li><a href="albums.html">Gallery</a></li>
+                </ul>
+            </div>
+            <div class="right"></div>
+        </div>
+    </div>
+      <div class="content">
+        <div class="content-head">
+            <div class="box">
+            <h1>Contribute</h1>
+              <div class="line">
+                <div class="triangle">
+                </div>
+              </div>
+            </div>
+        </div>    
+        <div class="content-main">
+    <div class="card contribute-card">
+      
+      <p>
+        Have a correction, a family story, a photo caption, or a document lead?
+        Send a note here. Optional: include your name and email if you’d like a reply.
+      </p>
+
+      <form id="contributeForm" novalidate>
+        <!-- Honeypot: bots often fill this; humans never see it -->
+        <div class="hp-field" aria-hidden="true">
+          <label>Leave this field empty</label>
+          <input type="text" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <div class="grid">
+          <div class="row">
+            <label for="name">Name (optional)</label>
+            <input id="name" name="name" type="text" maxlength="80" autocomplete="name" />
+          </div>
+
+          <div class="row">
+            <label for="email">Email (optional)</label>
+            <input id="email" name="email" type="email" maxlength="120" autocomplete="email" />
+            <div class="help">If provided, we can follow up with questions.</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <label for="message">Comment <span style="opacity:.7;">(required)</span></label>
+          <textarea id="message" name="message" required maxlength="5000"
+            placeholder="Example: I believe the date on X record should be..., or here is the story my grandmother told..."></textarea>
+          <div class="help">Please don’t include passwords, SSNs, bank info, or other sensitive data.</div>
+        </div>
+
+        <!-- Extra metadata is helpful -->
+        <input type="hidden" name="page" id="pageField" />
+
+        <div class="actions">
+          <button id="submitBtn" type="submit">Send</button>
+          <span id="status" class="status" aria-live="polite"></span>
+        </div>
+
+        <div class="fineprint">
+          By submitting, you confirm you have the right to share the content (e.g., photos you took, documents you own or are public).
+          We may edit for clarity and genealogical accuracy.
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+  </div>
+      </div>
+      <div class="footer">&copy;2022-2025</div>
+  </body>
+   <script>
+    // --- Contribute form JS: validate + sanitize for safe submission ---
+    (function () {
+      const form = document.getElementById("contributeForm");
+      const submitBtn = document.getElementById("submitBtn");
+      const statusEl = document.getElementById("status");
+      const pageField = document.getElementById("pageField");
+
+      // Formspree endpoint (create a form at Formspree and paste your ID)
+      const FORMSPREE_ENDPOINT = "https://formspree.io/f/mzddbzed";
+
+      pageField.value = window.location.href;
+
+      function setStatus(msg, kind) {
+        statusEl.textContent = msg;
+        statusEl.className = "status " + (kind || "");
+      }
+
+      // Minimal client-side sanitization:
+      // - trims
+      // - removes control chars
+      // - keeps normal punctuation
+      // (Server-side sanitation should also exist; Formspree handles safe email delivery.)
+      function cleanText(s, maxLen) {
+        const t = String(s || "")
+          .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "") // control chars
+          .trim();
+        return maxLen ? t.slice(0, maxLen) : t;
+      }
+
+      function isValidEmail(email) {
+        if (!email) return true; // optional
+        // conservative regex (avoid weird edge cases)
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setStatus("", "");
+
+        const hp = form.elements["website"]?.value;
+        if (hp && hp.trim().length > 0) {
+          // bot submission (quietly succeed)
+          setStatus("Thanks! Your message has been sent.", "ok");
+          form.reset();
+          return;
+        }
+
+        const name = cleanText(form.elements["name"].value, 80);
+        const email = cleanText(form.elements["email"].value, 120);
+        const message = cleanText(form.elements["message"].value, 5000);
+        const page = cleanText(form.elements["page"].value, 500);
+
+        if (!message) {
+          setStatus("Please enter a comment.", "err");
+          form.elements["message"].focus();
+          return;
+        }
+
+        if (!isValidEmail(email)) {
+          setStatus("That email doesn’t look valid. Please check it or leave it blank.", "err");
+          form.elements["email"].focus();
+          return;
+        }
+
+        submitBtn.disabled = true;
+        setStatus("Sending…", "");
+
+        // Send JSON to Formspree
+        try {
+          const res = await fetch(FORMSPREE_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({
+              name,
+              email,
+              message,
+              page,
+              // helpful additional metadata
+              userAgent: navigator.userAgent
+            })
+          });
+
+          if (res.ok) {
+            setStatus("Thanks! Your message has been sent.", "ok");
+            form.reset();
+            pageField.value = window.location.href;
+          } else {
+            setStatus("Sorry — something went wrong sending your message. Please try again in a moment.", "err");
+          }
+        } catch {
+          setStatus("Network error. Please try again, or email simerfamily@gmail.com directly.", "err");
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</html>

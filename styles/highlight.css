@@ -1,0 +1,83 @@
+.highlight-card{
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(255,255,255,.9);
+  backdrop-filter: blur(6px);
+}
+
+.highlight-title{
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.highlight-list{
+  margin: 0;
+  padding-left: 18px;
+}
+
+.highlight-item{
+  margin: 6px 0;
+  line-height: 1.25;
+}
+
+.highlight-tag{
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.history-block { margin-top: 10px; }
+.history-subtitle { font-weight: 700; margin: 8px 0 6px; }
+
+/* Float card inside main content so text wraps around it */
+.history-float{
+  float: right;
+  margin: 0 0 12px 16px;     /* space between card and wrapped text */
+  width: min(280px, 42%);    /* keep it modest */
+  max-width: 320px;
+  font-size: 0.88rem;        /* smaller than body text */
+  line-height: 1.25;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(6px);
+}
+
+/* Compact typography */
+.history-float .highlight-title{
+  font-weight: 800;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.history-float .history-subtitle{
+  font-weight: 800;
+  font-size: 0.9rem;
+  margin: 10px 0 6px;
+}
+
+.history-float .highlight-list{
+  margin: 0;
+  padding-left: 18px;
+}
+
+.history-float .highlight-item{
+  margin: 4px 0;
+}
+
+/* Mobile: don't float; make it full width and stack above text */
+@media (max-width: 760px){
+  .history-float{
+    float: none;
+    width: 100%;
+    max-width: none;
+    margin: 0 0 14px 0;
+  }
+}
+

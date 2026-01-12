@@ -143,3 +143,117 @@ body {
     width: 20px;
     height: 20px;
   }
+
+
+/* Compact floated "Today/Tomorrow in History" card */
+.history-float{
+  float: right;
+  margin: 0 0 10px 14px;
+  width: min(260px, 40%);
+  max-width: 300px;
+
+  /* compact typography */
+  font-size: 0.78rem;      /* smaller overall */
+  line-height: 1.15;
+
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(6px);
+
+  /* IMPORTANT: keep it from getting huge */
+  max-height: 220px;       /* tune this (200–260 usually feels right) */
+  overflow: auto;
+}
+
+/* Titles tighter + smaller */
+.history-float .highlight-title{
+  font-weight: 800;
+  font-size: 0.85rem;
+  margin: 0 0 4px 0;
+}
+
+.history-float .history-subtitle{
+  font-weight: 800;
+  font-size: 0.82rem;
+  margin: 8px 0 4px 0;
+}
+
+/* Lists: reduce indentation + spacing */
+.history-float .highlight-list{
+  margin: 0;
+  padding-left: 14px;      /* smaller indent */
+}
+
+/* Force list items smaller too (this is what you asked for) */
+.history-float .highlight-item,
+.history-float .highlight-list li{
+  font-size: 0.75rem;
+  line-height: 1.12;
+  margin: 2px 0;           /* tighter vertical spacing */
+}
+
+/* Optional: make bullets less visually heavy */
+.history-float .highlight-list li::marker{
+  font-size: 0.65em;
+}
+
+/* Mobile: stack instead of float */
+@media (max-width: 760px){
+  .history-float{
+    float: none;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    margin: 0 0 12px 0;
+  }
+}
+
+/* Main contribute container: float left within content */
+.contribute-card{
+  max-width: 720px;        /* narrower so it doesn’t dominate */
+  margin: 0 0 0 0;      /* left-aligned, no centering */
+  padding: 0;              /* remove card padding feel */
+  border: none;            /* remove outer border */
+  background: transparent; /* blend into page */
+  box-shadow: none;
+}
+
+/* Two-column layout with proper separation */
+.contribute-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 18px;        /* THIS fixes the “running together” */
+  row-gap: 14px;
+}
+
+/* Ensure inputs don’t overflow columns */
+.contribute-grid > div{
+  min-width: 0;
+}
+
+/* Inputs & textarea */
+.contribute-card input,
+.contribute-card textarea{
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Slightly tighten textarea so it feels integrated */
+.contribute-card textarea{
+  min-height: 150px;
+}
+
+/* Button alignment */
+.contribute-actions{
+  margin-top: 12px;
+}
+
+/* Mobile: stack cleanly */
+@media (max-width: 720px){
+  .contribute-grid{
+    grid-template-columns: 1fr;
+  }
+}
